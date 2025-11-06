@@ -2,30 +2,114 @@
 <html lang="ro">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BookEvent.ro – Găsește furnizori pentru evenimentul tău</title>
-  <meta name="description" content="Formații, DJ, fotografi, sală, candy bar – totul într-un singur loc. Lansăm în curând.">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BookEvent.ro — Găsește furnizori pentru evenimentul tău</title>
+  <meta name="description" content="Formații, DJ, fotografi, locații & servicii pentru evenimente. Compari rapid, ceri ofertă și rezervi online.">
+  <meta name="theme-color" content="#8b5cf6">
   <style>
-    body{margin:0;font:16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#e9e9ef; background:#0f0f12}
-    .wrap{max-width:960px;margin:0 auto;padding:32px}
-    .hero{margin-top:12px;border-radius:22px;background:#17171c;padding:28px;border:1px solid #23232b}
-    h1{margin:0 0 8px;font-size:40px}
-    p{margin:0 0 14px;color:#b9b9c6}
-    .cta a{display:inline-block;margin-right:10px;padding:10px 14px;border-radius:12px;background:#1c1c22;color:#fff;text-decoration:none;border:1px solid #262633}
-    .foot{margin-top:24px;color:#9a9aaa;font-size:13px;text-align:center}
+    :root{
+      --bg:#0b0b0e; --panel:#121218; --card:#15151c;
+      --text:#ececf3; --muted:#b4b4c3; --line:#242432;
+      --violet:#8b5cf6; --gold:#c7a74a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1200px 700px at 70% -10%,#1b1530 0%,#0b0b0e 60%);
+         color:var(--text);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    .wrap{max-width:1120px;margin:0 auto;padding:24px}
+    .nav{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+    .logo{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.3px}
+    .logo img{height:48px;width:auto}
+    .logo b{font-size:20px;color:#fff}
+    .actions a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;
+      color:var(--text);border:1px solid var(--line);background:#1a1a22;padding:8px 12px;border-radius:10px;margin-left:8px}
+    .hero{margin-top:14px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+      border-radius:24px;overflow:hidden;position:relative}
+    .hero-inner{padding:36px}
+    h1{font-size:46px;line-height:1.15;margin:0 0 10px}
+    .lead{color:var(--muted);max-width:760px;margin:0 0 18px}
+    .search{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:10px;margin:18px 0 8px}
+    .inp{background:var(--card);border:1px solid var(--line);color:var(--text);padding:12px 14px;border-radius:12px;outline:none}
+    .btn{background:var(--violet);color:#fff;border:none;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer}
+    .badge{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:#111;background:linear-gradient(135deg,#f5e6a3,var(--gold));
+      padding:6px 10px;border-radius:999px;border:1px solid #e6d38b;font-weight:700}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}
+    .card{background:var(--panel);border:1px solid var(--line);padding:18px;border-radius:16px}
+    .card h3{margin:0 0 6px;font-size:18px}
+    .muted{color:var(--muted)}
+    .cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .pill{background:#1a1a22;border:1px solid var(--line);padding:10px 12px;border-radius:12px}
+    .cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .cta a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#1a1a22;color:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:12px}
+    .foot{border-top:1px solid var(--line);margin-top:26px;padding:16px 0;color:var(--muted);font-size:13px;text-align:center}
+    @media(max-width:980px){ .search{grid-template-columns:1fr 1fr;}.grid{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="hero">
-      <h1>BookEvent.ro</h1>
-      <p>Găsește formații, DJ, fotografi și servicii pentru evenimentul tău. Lansăm în curând.</p>
-      <div class="cta">
-        <a href="mailto:bookevent.ro@gmail.com">✉️ Email</a>
-        <a href="https://wa.me/40700000000">💬 WhatsApp</a>
+    <nav class="nav">
+      <div class="logo">
+        <img src="logo.png" alt="BookEvent.ro Logo">
+        <b>BookEvent.ro</b>
       </div>
-    </div>
-    <p class="foot">© 2025 BookEvent.ro • pagină „coming soon”</p>
+      <div class="actions">
+        <a href="mailto:bookevent.ro@gmail.com">✉️ Email</a>
+        <a href="https://wa.me/40755880688">💬 WhatsApp</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div class="hero-inner">
+        <span class="badge">Lansare în curând · acces anticipat</span>
+        <h1>Găsește formații, DJ, fotografi & locații — într-un singur loc.</h1>
+        <p class="lead">Compari rapid ofertele, vezi portofolii și recenzii, apoi rezervi în siguranță. Platformă gândită pentru nunți, botezuri și evenimente corporate.</p>
+
+        <div class="search">
+          <input class="inp" placeholder="Ce serviciu cauți? (ex: formație, DJ, fotograf)">
+          <input class="inp" placeholder="Oraș">
+          <input class="inp" placeholder="Data evenimentului">
+          <button class="btn">Caută</button>
+        </div>
+
+        <div class="cta">
+          <a href="#">🎤 Înscrie-ți formația</a>
+          <a href="#">🏛️ Adaugă locația</a>
+          <a href="#">📷 Publică-ți serviciul</a>
+        </div>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h3>✅ Rapid & transparent</h3>
+        <p class="muted">Primești oferte clare, compari prețuri și disponibilitate în timp real.</p>
+      </article>
+      <article class="card">
+        <h3>🛡️ Contract & siguranță</h3>
+        <p class="muted">Model de contract standard, profiluri verificate și review-uri reale.</p>
+      </article>
+      <article class="card">
+        <h3>🎧 Pentru toate gusturile</h3>
+        <p class="muted">Formații live, DJ, fotografi, candy bar, artificii reci, videografi și multe altele.</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Categorii populare</h3>
+      <div class="cats">
+        <div class="pill">🎤 Formații nuntă</div>
+        <div class="pill">🎧 DJ & MC</div>
+        <div class="pill">📷 Fotograf & video</div>
+        <div class="pill">🏛️ Locații & săli</div>
+        <div class="pill">🍬 Candy bar</div>
+        <div class="pill">🎺 Saxofon / soliști</div>
+      </div>
+    </section>
+
+    <footer class="foot">
+      © 2025 BookEvent.ro • contact: 
+      <a href="mailto:bookevent.ro@gmail.com" style="color:#8b5cf6;text-decoration:none;">bookevent.ro@gmail.com</a> · 
+      <a href="https://wa.me/40755880688" style="color:#8b5cf6;text-decoration:none;">0755 880 688</a>
+    </footer>
   </div>
 </body>
 </html>
