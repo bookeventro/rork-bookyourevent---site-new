@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BookEvent.ro — Publică serviciu (Furnizor)</title>
+
+  <!-- Stil simplu, pe dark, în linie cu homepage-ul -->
+  <style>
+    :root{
+      --bg:#0f0f12; --panel:#151519; --border:#23232b; --text:#e9e9ef;
+      --muted:#a9a9b3; --accent:#1c1c22; --accent2:#2f2f39; --ok:#5be184; --err:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);
+      font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    a{color:var(--text)}
+    .container{max-width:920px;margin:32px auto;padding:0 16px}
+    .header{display:flex;gap:12px;align-items:center;margin-bottom:16px}
+    .chip{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--accent);font-size:13px;color:var(--muted)}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 0}
+    h1{font-size:24px;margin:0 0 6px}
+    h2{font-size:18px;margin:0 0 10px;color:var(--muted)}
+    label{display:block;margin:10px 0 6px;font-size:14px;color:var(--muted)}
+    input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+    textarea{resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    button{background:var(--accent);border:1px solid var(--accent2);color:var(--text);
+      border-radius:12px;padding:12px 16px;cursor:pointer}
+    button.ghost{background:transparent}
+    .muted{color:var(--muted);font-size:13px}
+    .ok{color:var(--ok)}
+    .err{color:var(--err)}
+    .hidden{display:none}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .spacer{flex:1}
+    .divider{height:1px;background:var(--border);margin:12px 0}
+    .badge{display:inline-block;padding:4px 8px;border:1px solid var(--border);
+      border-radius:999px;background:#121217;font-size:12px;color:var(--muted)}
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="/" class="chip">← Înapoi la BookEvent.ro</a>
+      <span class="chip">Publică serviciu — Furnizor</span>
+    </div>
+
+    <div class="panel">
+      <h1>Cont furnizor</h1>
+      <p class="muted">Autentifică-te sau creează-ți cont. Dacă rolul tău este <b>furnizor</b>, vei putea publica servicii.</p>
+      <div class="row">
+        <div>
+          <label>Email</label>
+          <input id="email" type="email" placeholder="ex: furnizor@bookevent.ro" />
+        </div>
+        <div>
+          <label>Parolă</label>
+          <input id="password" type="password" placeholder="••••••••" />
+        </div>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button id="btnSignUp">Creează cont</button>
+        <button id="btnSignIn">Autentificare</button>
+        <button id="btnSignOut" class="ghost">Delogare</button>
+        <span class="spacer"></span>
+        <span id="authState" class="muted">Neautentificat.</span>
+      </div>
+    </div>
+
+    <div id="roleOk" class="panel hidden">
+      <h2 class="ok">Ești autentificat ca <b>furnizor</b>. Poți publica servicii.</h2>
+      <span class="badge">Rol: furnizor</span>
+    </div>
+    <div id="roleBad" class="panel hidden">
+      <h2 class="err">Contul tău nu are rol <b>furnizor</b>.</h2>
+      <p class="muted">Te rugăm contactează administratorul pentru activare
+        (Supabase → <em>profiles.role = furnizor</em>).</p>
+      <span class="badge">Rol curent: client</span>
+    </div>
+
+    <!-- Formular publicare serviciu -->
+    <form id="serviceForm" class="panel hidden">
+      <h2>Publică serviciu</h2>
+      <div class="row">
+        <div>
+          <label>Nume serviciu</label>
+          <input id="name" required placeholder="Ex: Formație nuntă Timișoara" />
+        </div>
+        <div>
+          <label>Categorie</label>
+          <select id="category">
+            <option value="band">Formație</option>
+            <option value="dj">DJ</option>
+            <option value="photography">Fotograf</option>
+            <option value="videography">Videograf</option>
+            <option value="venue">Locație / sală</option>
+            <option value="candybar">Candy bar</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-3">
+        <div>
+          <label>Oraș</label>
+          <input id="city" placeholder="Ex: Timișoara" />
+        </div>
+        <div>
+          <label>Preț de bază (EUR)</label>
+          <input id="base_price" type="number" step="0.01" min="0" placeholder="Ex: 1200" />
+        </div>
+        <div>
+          <label>Activ</label>
+          <select id="is_active">
+            <option value="true" selected>Da (listat public)</option>
+            <option value="false">Nu (ascuns)</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Zone acoperire (separate prin virgule)</label>
+      <input id="coverage" placeholder="Ex: Timișoara, Arad, Deva" />
+
+      <label>Imagini / linkuri (separate prin virgule)</label>
+      <input id="media_urls" placeholder="Ex: https://.../1.jpg, https://.../2.jpg" />
+
+      <label>Descriere</label>
+      <textarea id="description" rows="5" placeholder="Descriere scurtă a serviciului..."></textarea>
+
+      <div class="toolbar" style="margin-top:10px">
+        <button type="submit">Publică serviciul</button>
+        <button type="button" id="btnClear" class="ghost">Curăță formular</button>
+        <span class="spacer"></span>
+        <span id="formMsg" class="muted"></span>
+      </div>
+
+      <div class="divider"></div>
+      <p class="muted">Tip coloane necesare în tabela <code>services</code>:
+        <code>owner_id uuid</code>, <code>name text</code>, <code>category text</code>, 
+        <code>description text</code>, <code>base_price numeric</code>, <code>city text</code>,
+        <code>coverage text[]</code>, <code>media_urls text[]</code>, <code>is_active boolean</code>, 
+        <code>created_at timestamp default now()</code>.
+      </p>
+    </form>
+  </div>
+
+  <script>
+    // 1) COMPLETEAZĂ cu datele tale din Supabase (Settings → API)
+    const SUPABASE_URL  = "YOUR_SUPABASE_URL";       // ex: https://xxxx.supabase.co
+    const SUPABASE_ANON = "YOUR_SUPABASE_ANON_KEY";  // Public anon key
+
+    // 2) Client Supabase
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // 3) Elementele UI
+    const $ = (id) => document.getElementById(id);
+    const authState = $('authState');
+    const roleOk    = $('roleOk');
+    const roleBad   = $('roleBad');
+    const form      = $('serviceForm');
+    const formMsg   = $('formMsg');
+
+    function show(el){ el.classList.remove('hidden'); }
+    function hide(el){ el.classList.add('hidden'); }
+    function clearForm(){
+      $('name').value = '';
+      $('category').value = 'band';
+      $('city').value = '';
+      $('base_price').value = '';
+      $('is_active').value = 'true';
+      $('coverage').value = '';
+      $('media_urls').value = '';
+      $('description').value = '';
+    }
+    $('btnClear').onclick = clearForm;
+
+    // 4) Actualizare UI în funcție de autentificare + rol
+    async function refreshUI(){
+      const { data: { user } } = await sb.auth.getUser();
+      if(!user){
+        authState.textContent = 'Neautentificat.';
+        hide(roleOk); hide(roleBad); hide(form);
+        return;
+      }
+      authState.textContent = `Autentificat: ${user.email}`;
+
+      // citim profilul pentru rol
+      const { data: prof, error } = await sb
+        .from('profiles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if(error){
+        console.error('Eroare profile:', error);
+        hide(roleOk); hide(form); show(roleBad);
+        roleBad.querySelector('.badge').textContent = 'Rol curent: necunoscut';
+        return;
+      }
+
+      if(prof?.role === 'furnizor'){
+        show(roleOk); show(form); hide(roleBad);
+      }else{
+        hide(roleOk); hide(form); show(roleBad);
+        roleBad.querySelector('.badge').textContent = `Rol curent: ${prof?.role ?? 'necunoscut'}`;
+      }
+    }
+
+    // 5) Acțiuni auth
+    $('btnSignUp').onclick = async () => {
+      const email = $('email').value.trim();
+      const password = $('password').value.trim();
+      const { error } = await sb.auth.signUp({ email, password });
+      authState.textContent = error ? `Eroare: ${error.message}` : 'Cont creat. Verifică emailul (sau auto-confirm dacă e setat).';
+      refreshUI();
+    };
+
+    $('btnSignIn').onclick = async () => {
+      const email = $('email').value.trim();
+      const password = $('password').value.trim();
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      authState.textContent = error ? `Eroare: ${error.message}` : 'Autentificat.';
+      refreshUI();
+    };
+
+    $('btnSignOut').onclick = async () => {
+      await sb.auth.signOut();
+      refreshUI();
+    };
+
+    sb.auth.onAuthStateChange(() => refreshUI());
+    refreshUI();
+
+    // 6) Publicare serviciu
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      formMsg.textContent = 'Public…';
+
+      const { data: { user } } = await sb.auth.getUser();
+      if(!user){ formMsg.textContent = 'Trebuie să fii autentificat.'; return; }
+
+      // pregătim payload
+      const payload = {
+        owner_id: user.id,
+        name: $('name').value.trim(),
+        category: $('category').value,
+        description: $('description').value.trim() || null,
+        base_price: Number($('base_price').value || 0),
+        city: $('city').value.trim() || null,
+        coverage: ($('coverage').value || '')
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean),
+        media_urls: ($('media_urls').value || '')
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean),
+        is_active: $('is_active').value === 'true'
+      };
+
+      // validare minimă
+      if(!payload.name){ formMsg.textContent = 'Te rog completează numele serviciului.'; return; }
+
+      const { error } = await sb.from('services').insert(payload);
+      if(error){
+        formMsg.textContent = `Eroare: ${error.message}`;
+        return;
+      }
+      formMsg.textContent = 'Serviciu publicat! ✅';
+      clearForm();
+    };
+  </script>
+</body>
+</html>
