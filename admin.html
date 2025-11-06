@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BookEvent.ro — Admin</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { color-scheme: dark; }
+    body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      background:#0f0f12;color:#e9e9ef}
+    header,footer{padding:16px 20px;border-bottom:1px solid #23232b}
+    footer{border-top:1px solid #23232b;border-bottom:none;opacity:.7}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    .card{border:1px solid #23232b;border-radius:14px;padding:18px;margin:14px 0;background:#121218}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .btn{background:#1c1c22;border:1px solid #2a2a34;color:#e9e9ef;border-radius:10px;
+      padding:8px 12px;cursor:pointer}
+    .btn.primary{background:#1c1c88;border-color:#2b2bb0}
+    .btn.warn{background:#661e1e;border-color:#8a3030}
+    .muted{opacity:.7}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{border-bottom:1px solid #23232b;padding:10px 8px;text-align:left;vertical-align:top}
+    th{font-weight:600;opacity:.85}
+    .tag{display:inline-block;padding:2px 8px;border-radius:9999px;background:#1f1f25;border:1px solid #2a2a34;font-size:12px}
+    .ok{color:#5dd28e}.bad{color:#ff6b6b}
+    .hide{display:none}
+    input,select{background:#101018;border:1px solid #242432;color:#e9e9ef;border-radius:10px;padding:8px 12px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header class="wrap row">
+  <h1 style="margin:0;font-size:20px">BookEvent.ro — <span class="muted">Admin</span></h1>
+  <div style="margin-left:auto" class="row">
+    <span id="me" class="muted"></span>
+    <button id="btnSignOut" class="btn">Sign out</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- LOGIN -->
+  <section id="loginCard" class="card">
+    <h3 style="margin-top:0">Autentificare</h3>
+    <p class="muted" style="margin-top:-6px">Doar conturile cu <b>role = admin</b> în <code>public.profiles</code> vor vedea panoul.</p>
+    <div class="grid2">
+      <div>
+        <label>Email</label><br>
+        <input id="email" type="email" placeholder="admin@exemplu.ro" style="width:100%;margin-top:6px">
+      </div>
+      <div>
+        <label>Parolă</label><br>
+        <input id="password" type="password" placeholder="••••••••" style="width:100%;margin-top:6px">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="btnSignIn" class="btn primary">Sign in</button>
+      <span id="loginMsg" class="muted"></span>
+    </div>
+  </section>
+
+  <!-- FORBIDDEN -->
+  <section id="forbiddenCard" class="card hide">
+    <h3 style="margin:0;color:#ff6b6b">403 — Acces interzis</h3>
+    <p class="muted">Contul tău este logat, dar nu are rol <code>admin</code> în <code>public.profiles</code>.<br>
+    Cere unui administrator să-ți seteze <code>role = 'admin'</code> sau folosește alt cont.</p>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dash" class="hide">
+    <div class="card">
+      <h3 style="margin:0 0 10px 0">Privire de ansamblu</h3>
+      <div class="row">
+        <span id="countAdmins" class="tag">admins: 0</span>
+        <span id="countVendors" class="tag">furnizori: 0</span>
+        <span id="countServices" class="tag">servicii: 0</span>
+        <span id="countPending" class="tag">în așteptare: 0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Furnizori (profiles.role = 'furnizor')</h3>
+        <button class="btn" id="btnReloadVendors">Reîncarcă</button>
+      </div>
+      <div id="vendorsWrap" class="muted">Se încarcă…</div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Servicii</h3>
+        <div class="row">
+          <label class="muted">Filtru:</label>
+          <select id="serviceFilter">
+            <option value="all">Toate</option>
+            <option value="approved">Doar aprobate</option>
+            <option value="pending">Doar în așteptare</option>
+          </select>
+          <button class="btn" id="btnReloadServices">Reîncarcă</button>
+        </div>
+      </div>
+      <div id="servicesWrap" class="muted">Se încarcă…</div>
+    </div>
+  </section>
+</div>
+
+<footer class="wrap">
+  © BookEvent.ro — panou admin
+</footer>
+
+<script>
+  // === CONFIG ===
+  const SUPABASE_URL = 'https://vbqwubzhcghcznfcsowo.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZicXd1YnpoY2doY3puZmNzb3dvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NTU2NDgsImV4cCI6MjA3ODAzMTY0OH0.VB_P-MrzBgflLBFdxQlmHL_hiGUeaiYDBnuCX7ahBCU';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // UI refs
+  const loginCard = document.getElementById('loginCard');
+  const forbiddenCard = document.getElementById('forbiddenCard');
+  const dash = document.getElementById('dash');
+  const me = document.getElementById('me');
+  const loginMsg = document.getElementById('loginMsg');
+  const emailEl = document.getElementById('email');
+  const passEl = document.getElementById('password');
+  const btnSignIn = document.getElementById('btnSignIn');
+  const btnSignOut = document.getElementById('btnSignOut');
+  const vendorsWrap = document.getElementById('vendorsWrap');
+  const servicesWrap = document.getElementById('servicesWrap');
+  const btnReloadVendors = document.getElementById('btnReloadVendors');
+  const btnReloadServices = document.getElementById('btnReloadServices');
+  const serviceFilter = document.getElementById('serviceFilter');
+  const countAdmins = document.getElementById('countAdmins');
+  const countVendors = document.getElementById('countVendors');
+  const countServices = document.getElementById('countServices');
+  const countPending = document.getElementById('countPending');
+
+  let currentUser = null;
+
+  // ==== Helpers ====
+  function show(id, on){ (on? document.getElementById(id).classList.remove('hide') : document.getElementById(id).classList.add('hide')); }
+  function escapeHtml(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])) }
+
+  async function requireAdmin(){
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUser = user || null;
+    if(!user){
+      // neautentificat
+      show('loginCard', true);
+      forbiddenCard.classList.add('hide');
+      dash.classList.add('hide');
+      me.textContent = '';
+      return;
+    }
+    me.textContent = user.email;
+
+    // citim profilul
+    const { data: prof, error } = await supabase
+      .from('profiles')
+      .select('role, full_name, phone')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if(error){
+      console.error(error);
+      loginMsg.textContent = 'Eroare la citirea profilului.';
+      show('loginCard', true);
+      dash.classList.add('hide');
+      return;
+    }
+    if(!prof || prof.role !== 'admin'){
+      // logat dar nu e admin
+      loginCard.classList.add('hide');
+      show('forbiddenCard', true);
+      dash.classList.add('hide');
+      return;
+    }
+    // e admin!
+    loginCard.classList.add('hide');
+    forbiddenCard.classList.add('hide');
+    show('dash', true);
+    await refreshAll();
+  }
+
+  async function refreshAll(){
+    await Promise.all([loadCounts(), loadVendors(), loadServices()]);
+  }
+
+  // === Login flows ===
+  btnSignIn.addEventListener('click', async ()=>{
+    loginMsg.textContent = 'Autentificare…';
+    const email = emailEl.value.trim();
+    const password = passEl.value;
+    if(!email || !password){
+      loginMsg.textContent = 'Completează email și parolă.';
+      return;
+    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if(error){ loginMsg.textContent = 'Eroare: ' + error.message; return; }
+    loginMsg.textContent = '';
+    await requireAdmin();
+  });
+
+  btnSignOut.addEventListener('click', async ()=>{
+    await supabase.auth.signOut();
+    location.reload();
+  });
+
+  // === Data loaders ===
+  async function loadCounts(){
+    // admins
+    const { data: admins } = await supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('role', 'admin');
+    countAdmins.textContent = 'admins: ' + (admins?.length ?? admins?.count ?? 0);
+
+    // furnizori
+    const { data: vendors } = await supabase.from('profiles').select('user_id', { count: 'exact', head: true }).eq('role', 'furnizor');
+    countVendors.textContent = 'furnizori: ' + (vendors?.length ?? vendors?.count ?? 0);
+
+    // servicii total & pending (dacă există coloanele)
+    try{
+      const { data: total } = await supabase.from('services').select('id', { count: 'exact', head: true });
+      countServices.textContent = 'servicii: ' + (total?.length ?? total?.count ?? 0);
+    }catch(e){ countServices.textContent = 'servicii: n/a'; }
+
+    try{
+      const { data: pend } = await supabase.from('services').select('id', { count: 'exact', head: true }).eq('approved', false);
+      countPending.textContent = 'în așteptare: ' + (pend?.length ?? pend?.count ?? 0);
+    }catch(e){ countPending.textContent = 'în așteptare: n/a'; }
+  }
+
+  async function loadVendors(){
+    vendorsWrap.textContent = 'Se încarcă…';
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('full_name, phone, user_id')
+      .eq('role', 'furnizor')
+      .order('full_name', { ascending: true });
+    if(error){ vendorsWrap.textContent = 'Eroare: ' + error.message; return; }
+    if(!data || !data.length){ vendorsWrap.textContent = 'Nu există furnizori încă.'; return; }
+
+    let html = `<table><thead><tr><th>Nume</th><th>Telefon</th><th>User ID</th></tr></thead><tbody>`;
+    for(const r of data){
+      html += `<tr>
+        <td>${escapeHtml(r.full_name || '—')}</td>
+        <td>${escapeHtml(r.phone || '—')}</td>
+        <td class="muted">${escapeHtml(r.user_id)}</td>
+      </tr>`;
+    }
+    html += `</tbody></table>`;
+    vendorsWrap.innerHTML = html;
+  }
+
+  async function loadServices(){
+    servicesWrap.textContent = 'Se încarcă…';
+    const filter = serviceFilter.value;
+    let q = supabase.from('services').select('*').order('created_at', { ascending: false });
+    if(filter === 'approved') q = q.eq('approved', true);
+    if(filter === 'pending')  q = q.eq('approved', false);
+
+    const { data, error } = await q;
+    if(error){ servicesWrap.textContent = 'Eroare: ' + error.message + ' (ai tabelul services?)'; return; }
+    if(!data || !data.length){ servicesWrap.textContent = 'Nu există servicii.'; return; }
+
+    // detectăm dacă există coloanele așteptate
+    const hasApproved = Object.prototype.hasOwnProperty.call(data[0], 'approved');
+    const hasTitle    = Object.prototype.hasOwnProperty.call(data[0], 'title');
+    const hasOwner    = Object.prototype.hasOwnProperty.call(data[0], 'owner_id');
+
+    let html = `<table><thead><tr>
+      <th>ID</th><th>Titlu</th><th>Owner</th>${hasApproved?'<th>Status</th><th>Acțiuni</th>':''}
+    </tr></thead><tbody>`;
+    for(const r of data){
+      html += `<tr>
+        <td class="muted">${escapeHtml(r.id)}</td>
+        <td>${escapeHtml(hasTitle ? r.title : '(fără col. title)')}</td>
+        <td class="muted">${escapeHtml(hasOwner ? r.owner_id : '(fără col. owner_id)')}</td>`;
+      if(hasApproved){
+        html += `<td>${r.approved ? '<span class="ok">aprobat</span>' : '<span class="bad">în așteptare</span>'}</td>
+                 <td class="row">
+                   ${r.approved
+                      ? `<button class="btn warn" onclick="updateServiceApproved('${r.id}', false)">Dezactivează</button>`
+                      : `<button class="btn primary" onclick="updateServiceApproved('${r.id}', true)">Aprobă</button>`}
+                 </td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `</tbody></table>`;
+    servicesWrap.innerHTML = html;
+  }
+
+  // aprobă / dezactivează (necesită politici care să permită adminului update!)
+  async function updateServiceApproved(id, val){
+    try{
+      const { error } = await supabase.from('services').update({ approved: val }).eq('id', id);
+      if(error) { alert('Eroare: ' + error.message + '\nAsigură-te că ai politici RLS pt admin.'); return; }
+      await Promise.all([loadCounts(), loadServices()]);
+    }catch(e){ alert('Eroare: ' + e.message); }
+  }
+  window.updateServiceApproved = updateServiceApproved;
+
+  // events
+  btnReloadVendors.addEventListener('click', loadVendors);
+  btnReloadServices.addEventListener('click', loadServices);
+  serviceFilter.addEventListener('change', loadServices);
+
+  // on load
+  requireAdmin();
+</script>
+</body>
+</html>
